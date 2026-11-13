@@ -2,7 +2,14 @@
 #include <fcntl.h>
 #include <io.h>
 
-//g++ -std=c++17 -O2 -Wall -Wextra -municode src/*.cpp -o build/reg.exe -ladvapi32
+static long long counter()
+{
+    LARGE_INTEGER n;
+    if (!QueryPerformanceCounter(&n))
+        checkWin(ERROR_NOT_SUPPORTED, L"QueryPerformanceCounter", L"search timer");
+    return n.QuadPart;
+}
+
 int wmain(int argc, wchar_t **argv)
 {
     _setmode(_fileno(stdout), _O_U8TEXT);
@@ -18,7 +25,18 @@ int wmain(int argc, wchar_t **argv)
             prepare(o);
         else if (o.mode == L"search")
         {
+            logEvent(L"REG_SEARCH", o.root, L"status=START");
+            LARGE_INTEGER frequency;
+
+            if (!QueryPerformanceFrequency(&frequency))
+                checkWin(ERROR_NOT_SUPPORTED, L"QueryPerformanceFrequency", L"search timer");
+
+            auto begin = counter();
+
             auto r = search(o);
+            double ms = 1000.0 * (counter() - begin) / frequency.QuadPart;
+            logEvent(L"REG_SEARCH", o.root, L"status=OK");
+            writeMeasurement(o, r, ms);
 
             if (!o.quiet)
             {
@@ -26,7 +44,8 @@ int wmain(int argc, wchar_t **argv)
                     std::wcout << hit.path << L'\n';
             }
 
-            std::wcout << L"visited=" << r.visited << L" found=" << r.hits.size() << L'\n';
+            std::wcout << L"visited=" << r.visited << L" found=" << r.hits.size()
+                       << L" elapsed_ms=" << ms << L'\n';
         }
         else
             throw std::invalid_argument("unknown mode");

@@ -16,6 +16,7 @@ struct Options
     std::wstring root;
     std::wstring pattern = L"target";
     int depth = 6;
+    int targetPct = 50;
     bool quiet = false;
 };
 
@@ -35,6 +36,7 @@ Options parse(int argc, wchar_t **argv);
 std::wstring sandbox(const Options &o);
 void setQuiet(bool enabled);
 void logEvent(const std::wstring &op, const std::wstring &object, const std::wstring &result);
+void writeMeasurement(const Options& o, const Results& r, double ms);
 void prepare(const Options &o);
 Results search(const Options &o);
 void checkWin(LSTATUS code, const wchar_t *api, const std::wstring &object);

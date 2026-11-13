@@ -7,7 +7,7 @@ static int number(const std::wstring &value, int low, int high)
         throw std::invalid_argument("expected unsigned decimal integer");
 
     auto n = std::stoll(value);
-    
+
     if (n < low || n > high)
         throw std::out_of_range("number outside allowed range");
 
@@ -48,6 +48,8 @@ Options parse(int argc, wchar_t **argv)
             o.pattern = v;
         else if (k == L"--depth")
             o.depth = number(v, 0, 512);
+        else if (k == L"--target_pct")
+            o.targetPct = number(v, 0, 100);
         else
             throw std::invalid_argument("unknown option");
     }

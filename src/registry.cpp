@@ -29,19 +29,26 @@ namespace
         }
     };
 
-    void grow(HKEY parent, const std::wstring &path, int level, std::mt19937 &rng)
+    void grow(HKEY parent, const std::wstring &path, int level, std::mt19937 &rng, int targetPct)
     {
         if (level > 6)
             return;
+
+        std::uniform_int_distribution<int> percent(1, 100);
+
         for (int side = 0; side < 2; ++side)
         {
-            std::wstring name = level % 2 == 0 && side == 0 ? L"TaRgEt_" : L"Node_";
+            bool isTarget = percent(rng) <= targetPct;
+            std::wstring name = isTarget ? L"TaRgEt_" : L"Node_";
             name += std::to_wstring(side) + L"_" + std::to_wstring(rng() % 10000);
+
             Key child(path + L"\\" + name);
-            checkWin(RegCreateKeyExW(parent, name.c_str(), 0, nullptr, 0, KEY_CREATE_SUB_KEY,
-                                     nullptr, &child.h, nullptr),
-                     L"RegCreateKeyExW", child.path);
-            grow(child.h, child.path, level + 1, rng);
+            checkWin(
+                RegCreateKeyExW(parent, name.c_str(), 0, nullptr, 0,
+                                KEY_CREATE_SUB_KEY, nullptr, &child.h, nullptr),
+                L"RegCreateKeyExW", child.path);
+
+            grow(child.h, child.path, level + 1, rng, targetPct);
         }
     }
 
@@ -84,12 +91,12 @@ void prepare(const Options &o)
     checkWin(RegCreateKeyExW(HKEY_CURRENT_USER, sub.c_str(), 0, nullptr, 0, KEY_CREATE_SUB_KEY,
                              nullptr, &root.h, &disposition),
              L"RegCreateKeyExW", root.path);
-            
+
     if (disposition != REG_CREATED_NEW_KEY)
         throw std::runtime_error("run key exists; reuse it for search or choose a new run");
 
     std::mt19937 rng(1000 + o.student * 97);
-    grow(root.h, root.path, 1, rng);
+    grow(root.h, root.path, 1, rng, o.targetPct);
     logEvent(L"REG_CREATE_TREE", root.path, L"status=OK created=126");
 }
 
@@ -112,7 +119,7 @@ Results search(const Options &o)
     auto split = o.root.find(L'\\');
     std::wstring prefix = o.root.substr(0, split);
     std::wstring sub = split == std::wstring::npos ? L"" : o.root.substr(split + 1);
-    
+
     while (!sub.empty() && sub.back() == L'\\')
         sub.pop_back();
 
@@ -122,7 +129,7 @@ Results search(const Options &o)
             continue;
         Key root(std::wstring(hive.name) + (sub.empty() ? L"" : L"\\" + sub));
         checkWin(RegOpenKeyExW(hive.h, sub.c_str(), 0, KEY_ENUMERATE_SUB_KEYS, &root.h),
-             L"RegOpenKeyExW", root.path);
+                 L"RegOpenKeyExW", root.path);
         Results r;
         walk(root.h, root.path, 1, o, r);
         return r;
