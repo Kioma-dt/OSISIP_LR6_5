@@ -53,7 +53,7 @@ int wmain(int argc, wchar_t **argv)
     }
     catch (const std::exception &e)
     {
-        logEvent(L"RUN", L"lab06", std::wstring(L"status=ERROR detail=") + std::wstring(e.what(), e.what() + std::char_traits<char>::length(e.what())));
+        logEvent(L"RUN", L"reg", std::wstring(L"status=ERROR detail=") + std::wstring(e.what(), e.what() + std::char_traits<char>::length(e.what())));
         return 1;
     }
 }
