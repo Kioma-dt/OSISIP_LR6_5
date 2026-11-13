@@ -9,12 +9,32 @@
 #include <string>
 #include <vector>
 
-using Text = std::wstring;
 struct Options
 {
     int student = 1, run = 1;
-    Text mode = L"info";
+    std::wstring mode = L"info";
+    std::wstring root;
+    std::wstring pattern = L"target";
+    int depth = 6;
+    bool quiet = false;
 };
+
+struct Hit
+{
+    int depth;
+    std::wstring path;
+};
+
+struct Results
+{
+    int visited = 0;
+    std::vector<Hit> hits;
+};
+
 Options parse(int argc, wchar_t **argv);
-Text sandbox(const Options &o);
-void logEvent(const Text &op, const Text &object, const Text &result);
+std::wstring sandbox(const Options &o);
+void setQuiet(bool enabled);
+void logEvent(const std::wstring &op, const std::wstring &object, const std::wstring &result);
+void prepare(const Options &o);
+Results search(const Options &o);
+void checkWin(LSTATUS code, const wchar_t *api, const std::wstring &object);
